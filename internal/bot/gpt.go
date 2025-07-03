@@ -13,7 +13,7 @@ import (
 
 var (
 	gptModelsMenu                        = &tele.ReplyMarkup{}
-	openAIGPT41                          = gptModelsMenu.Data("OpenAI – GPT-4.1", "openAI/gpt-4.1")
+	openAIGPT41                          = gptModelsMenu.Data("OpenAI – GPT-4o", "openAI/gpt-4o")
 	libreChatProviders map[string]string = map[string]string{
 		"openAI": gpts.OpenAI,
 	}
@@ -24,15 +24,18 @@ func (b *Bot) newGPTChat(c tele.Context) error {
 	convo, err := b.librechatClient.MongoCreateConversation(
 		"67d54d915f5f1dfc7994e482",
 		"openAI",
-		"gpt-4.1",
+		"gpt-4o",
 	)
 	if err != nil {
 		return err
 	}
 
 	user := c.Get("user").(*core.Record)
-	b.setUserData(user, map[string]any{"convo": convo})
-	msg := "Starting new conversation with OpenAI GPT-4.1, change it if necessary"
+	err = b.setUserData(user, map[string]any{"convo": convo, "chat_state": "gpt"})
+	if err != nil {
+		return err
+	}
+	msg := "Starting new conversation with OpenAI GPT-4o, change it if necessary"
 	msg = EscapeTelegramMarkdown(msg)
 	return c.Send(msg, &tele.SendOptions{ParseMode: tele.ModeMarkdownV2}, &gptModelsMenu)
 }

@@ -4,6 +4,7 @@ go 1.24.3
 
 require (
 	github.com/caarlos0/env/v11 v11.3.1
+	github.com/google/uuid v1.6.0
 	github.com/pocketbase/pocketbase v0.28.4
 	github.com/sashabaranov/go-openai v1.40.3
 	go.mongodb.org/mongo-driver/v2 v2.2.2
@@ -21,7 +22,6 @@ require (
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0 // indirect
 	github.com/golang-jwt/jwt/v5 v5.2.2 // indirect
 	github.com/golang/snappy v1.0.0 // indirect
-	github.com/google/uuid v1.6.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/mattn/go-colorable v0.1.14 // indirect

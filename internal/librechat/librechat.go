@@ -2,7 +2,10 @@ package librechat
 
 import (
 	"context"
+	"time"
 
+	"github.com/google/uuid"
+	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
@@ -13,7 +16,10 @@ type LibreChat struct {
 }
 
 func New(mongoURI string, mongoUserID string) (*LibreChat, error) {
-	client, _ := mongo.Connect(options.Client().ApplyURI(mongoURI))
+	client, err := mongo.Connect(options.Client().ApplyURI(mongoURI))
+	if err != nil {
+		return nil, err
+	}
 	return &LibreChat{
 		mongoClient: client,
 		mongoUserID: mongoUserID,
@@ -51,7 +57,32 @@ Here is an example data from LibreChat database
 	}
 */
 func (c *LibreChat) MongoCreateConversation(user string, endpoint string, model string) (string, error) {
-	return "", nil
+	conversationID := uuid.New().String()
+	now := time.Now()
+	
+	conversation := bson.M{
+		"conversationId": conversationID,
+		"user":          user,
+		"__v":           0,
+		"_meiliIndex":   true,
+		"createdAt":     now,
+		"endpoint":      endpoint,
+		"files":         []string{},
+		"isArchived":    false,
+		"messages":      []string{},
+		"model":         model,
+		"tags":          []string{},
+		"title":         "New Chat",
+		"updatedAt":     now,
+	}
+
+	collection := c.mongoClient.Database("LibreChat").Collection("conversations")
+	_, err := collection.InsertOne(context.TODO(), conversation)
+	if err != nil {
+		return "", err
+	}
+
+	return conversationID, nil
 }
 
 type Conversation struct {
@@ -62,7 +93,16 @@ type Conversation struct {
 }
 
 func (c *LibreChat) MongoGetConversation(convo string) (*Conversation, error) {
-	return nil, nil
+	collection := c.mongoClient.Database("LibreChat").Collection("conversations")
+	
+	var conversation Conversation
+	filter := bson.M{"conversationId": convo}
+	err := collection.FindOne(context.TODO(), filter).Decode(&conversation)
+	if err != nil {
+		return nil, err
+	}
+	
+	return &conversation, nil
 }
 
 /*
@@ -96,9 +136,62 @@ type Message struct {
 }
 
 func (c *LibreChat) MongoGetConversationMessages(convo string) ([]Message, error) {
-	return []Message{}, nil
+	collection := c.mongoClient.Database("LibreChat").Collection("messages")
+	
+	filter := bson.M{"conversationId": convo}
+	cursor, err := collection.Find(context.TODO(), filter)
+	if err != nil {
+		return nil, err
+	}
+	defer cursor.Close(context.TODO())
+	
+	var messages []Message
+	for cursor.Next(context.TODO()) {
+		var message Message
+		if err := cursor.Decode(&message); err != nil {
+			continue
+		}
+		messages = append(messages, message)
+	}
+	
+	return messages, nil
 }
 
 func (c *LibreChat) MongoCreateMessage(convo string, text string, parentMessageID string, isCreatedByUser bool) (string, error) {
-	return "", nil
+	messageID := uuid.New().String()
+	
+	// Get conversation details to populate required fields
+	conversation, err := c.MongoGetConversation(convo)
+	if err != nil {
+		return "", err
+	}
+	
+	sender := "GPT-4"
+	if isCreatedByUser {
+		sender = "User"
+	}
+	
+	message := bson.M{
+		"messageId":        messageID,
+		"__v":              0,
+		"_meiliIndex":      true,
+		"conversationId":   convo,
+		"endpoint":         conversation.Endpoint,
+		"error":            false,
+		"isCreatedByUser":  isCreatedByUser,
+		"model":            conversation.Model,
+		"parentMessageId":  parentMessageID,
+		"sender":           sender,
+		"text":             text,
+		"unfinished":       false,
+		"user":             conversation.User,
+	}
+
+	collection := c.mongoClient.Database("LibreChat").Collection("messages")
+	_, err = collection.InsertOne(context.TODO(), message)
+	if err != nil {
+		return "", err
+	}
+
+	return messageID, nil
 }

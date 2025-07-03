@@ -68,6 +68,7 @@ func (b *Bot) Start() {
 
 	// Main commands
 	b.bot.Handle("/start", b.handleStart)
+	b.bot.Handle("/gpt", b.newGPTChat)
 
 	b.bot.Handle(tele.OnCallback, b.handleCallback)
 	b.bot.Handle(tele.OnText, b.handleText)
@@ -97,5 +98,5 @@ func (b *Bot) handleText(c tele.Context) error {
 }
 
 func (b *Bot) handleStart(c tele.Context) error {
-	return nil
+	return c.Send("Bot started! Use /gpt to start a new GPT conversation.")
 }

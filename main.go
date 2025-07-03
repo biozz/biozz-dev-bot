@@ -23,6 +23,8 @@ type config struct {
 	GPTThreadID       int64  `env:"GPT_THREAD_ID"`
 	LibreChatMongoURI string `env:"LIBRECHAT_MONGO_URI"`
 	LibreChatUserID   string `env:"LIBRECHAT_USER_ID"`
+	OpenAIAPIKey      string `env:"OPENAI_API_KEY"`
+	OpenRouterAPIKey  string `env:"OPENROUTER_API_KEY"`
 }
 
 func main() {
@@ -42,11 +44,14 @@ func main() {
 	defer librechatClient.Cleanup()
 
 	bot, err := bot.New(bot.NewBotParams{
-		App:          app,
-		BotToken:     cfg.TelegramBotToken,
-		SuperGroupID: cfg.SuperGroupID,
-		SuperUserID:  cfg.SuperUserID,
-		GPTThreadID:  cfg.GPTThreadID,
+		App:             app,
+		LibreChatClient: librechatClient,
+		BotToken:        cfg.TelegramBotToken,
+		SuperGroupID:    cfg.SuperGroupID,
+		SuperUserID:     cfg.SuperUserID,
+		GPTThreadID:     cfg.GPTThreadID,
+		OpenAIAPIKey:    cfg.OpenAIAPIKey,
+		OpenRouterAPIKey: cfg.OpenRouterAPIKey,
 	})
 	if err != nil {
 		app.Logger().Error("Failed to create bot", "error", err)
