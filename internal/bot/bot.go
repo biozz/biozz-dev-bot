@@ -6,7 +6,6 @@ import (
 
 	"github.com/biozz/biozz-dev-bot/internal/librechat"
 	"github.com/pocketbase/pocketbase"
-	"github.com/pocketbase/pocketbase/core"
 	tele "gopkg.in/telebot.v4"
 	"gopkg.in/telebot.v4/middleware"
 )
@@ -20,6 +19,7 @@ type Bot struct {
 	gptThreadID      int64
 	openAIAPIKey     string
 	openRouterAPIKey string
+	summaryModel     string
 }
 
 type NewBotParams struct {
@@ -32,6 +32,7 @@ type NewBotParams struct {
 	// API Keys
 	OpenAIAPIKey     string
 	OpenRouterAPIKey string
+	SummaryModel     string
 }
 
 func New(params NewBotParams) (*Bot, error) {
@@ -55,6 +56,7 @@ func New(params NewBotParams) (*Bot, error) {
 		// API Keys
 		openAIAPIKey:     params.OpenAIAPIKey,
 		openRouterAPIKey: params.OpenRouterAPIKey,
+		summaryModel:     params.SummaryModel,
 	}
 	return bot, nil
 }
@@ -62,12 +64,12 @@ func New(params NewBotParams) (*Bot, error) {
 func (b *Bot) Start() {
 
 	// Register global middleware
-	b.bot.Use(b.SetUser)
 	b.bot.Use(b.LogMessage)
 	b.bot.Use(middleware.Whitelist(b.superuserID))
 
 	// Main commands
 	b.bot.Handle("/start", b.handleStart)
+	b.bot.Handle("/gpt", b.newGPTChat)
 
 	b.bot.Handle(tele.OnCallback, b.handleCallback)
 	b.bot.Handle(tele.OnText, b.handleText)
@@ -83,8 +85,11 @@ func (b *Bot) handleCallback(c tele.Context) error {
 }
 
 func (b *Bot) handleText(c tele.Context) error {
-	user := c.Get("user").(*core.Record)
-	state := user.GetString("chat_state")
+	state, err := b.getState("chat_state")
+	if err != nil {
+		b.app.Logger().Error("Error getting state", "error", err)
+		return err
+	}
 	b.app.Logger().Debug("Received text", "text", c.Text(), "state", state)
 
 	switch state {
@@ -97,5 +102,5 @@ func (b *Bot) handleText(c tele.Context) error {
 }
 
 func (b *Bot) handleStart(c tele.Context) error {
-	return nil
+	return c.Send("Bot started! Use /gpt to start a new GPT conversation.")
 }

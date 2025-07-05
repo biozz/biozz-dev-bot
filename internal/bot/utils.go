@@ -3,7 +3,7 @@ package bot
 import (
 	"strings"
 
-	"github.com/pocketbase/pocketbase/core"
+	"github.com/pocketbase/dbx"
 )
 
 func EscapeTelegramMarkdown(text string) string {
@@ -15,9 +15,27 @@ func EscapeTelegramMarkdown(text string) string {
 	return text
 }
 
-func (b *Bot) setUserData(user *core.Record, data map[string]any) error {
+func (b *Bot) setState(data map[string]any) error {
 	for key, value := range data {
-		user.Set(key, value)
+		state, err := b.app.FindFirstRecordByFilter("state", "key = {:key}", dbx.Params{"key": key})
+		if err != nil {
+			b.app.Logger().Error("Error finding state", "error", err)
+			return err
+		}
+		state.Set("value", value)
+		if err := b.app.Save(state); err != nil {
+			b.app.Logger().Error("Error saving state", "error", err)
+			return err
+		}
 	}
-	return b.app.Save(user)
+	return nil
+}
+
+func (b *Bot) getState(key string) (string, error) {
+	state, err := b.app.FindFirstRecordByFilter("state", "key = {:key}", dbx.Params{"key": key})
+	if err != nil {
+		b.app.Logger().Error("Error finding state", "error", err)
+		return "", err
+	}
+	return state.Get("value").(string), nil
 }

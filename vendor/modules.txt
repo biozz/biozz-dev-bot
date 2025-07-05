@@ -187,7 +187,7 @@ golang.org/x/crypto/blowfish
 golang.org/x/crypto/ocsp
 golang.org/x/crypto/pbkdf2
 golang.org/x/crypto/scrypt
-# golang.org/x/exp v0.0.0-20250606033433-dcc06ee1d476
+# golang.org/x/exp v0.0.0-20250620022241-b7579e27df2b
 ## explicit; go 1.23.0
 golang.org/x/exp/constraints
 # golang.org/x/image v0.28.0
@@ -237,7 +237,7 @@ golang.org/x/text/unicode/norm
 ## explicit; go 1.16
 gopkg.in/telebot.v4
 gopkg.in/telebot.v4/middleware
-# modernc.org/libc v1.65.10
+# modernc.org/libc v1.66.2
 ## explicit; go 1.23.0
 modernc.org/libc
 modernc.org/libc/errno

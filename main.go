@@ -23,6 +23,11 @@ type config struct {
 	GPTThreadID       int64  `env:"GPT_THREAD_ID"`
 	LibreChatMongoURI string `env:"LIBRECHAT_MONGO_URI"`
 	LibreChatUserID   string `env:"LIBRECHAT_USER_ID"`
+	LibreChatTag      string `env:"LIBRECHAT_TAG"`
+	OpenAIAPIKey      string `env:"OPENAI_API_KEY"`
+	OpenRouterAPIKey  string `env:"OPENROUTER_API_KEY"`
+	ConvoModel        string `env:"CONVO_MODEL"`
+	SummaryModel      string `env:"SUMMARY_MODEL"`
 }
 
 func main() {
@@ -34,7 +39,12 @@ func main() {
 		return
 	}
 
-	librechatClient, err := librechat.New(cfg.LibreChatMongoURI, cfg.LibreChatUserID)
+	librechatClient, err := librechat.New(librechat.NewParams{
+		MongoURI:    cfg.LibreChatMongoURI,
+		MongoUserID: cfg.LibreChatUserID,
+		MongoTag:    cfg.LibreChatTag,
+		ConvoModel:  cfg.ConvoModel,
+	})
 	if err != nil {
 		app.Logger().Error("Failed to create LibreChat client", "error", err)
 		return
@@ -42,11 +52,15 @@ func main() {
 	defer librechatClient.Cleanup()
 
 	bot, err := bot.New(bot.NewBotParams{
-		App:          app,
-		BotToken:     cfg.TelegramBotToken,
-		SuperGroupID: cfg.SuperGroupID,
-		SuperUserID:  cfg.SuperUserID,
-		GPTThreadID:  cfg.GPTThreadID,
+		App:              app,
+		LibreChatClient:  librechatClient,
+		BotToken:         cfg.TelegramBotToken,
+		SuperGroupID:     cfg.SuperGroupID,
+		SuperUserID:      cfg.SuperUserID,
+		GPTThreadID:      cfg.GPTThreadID,
+		OpenAIAPIKey:     cfg.OpenAIAPIKey,
+		OpenRouterAPIKey: cfg.OpenRouterAPIKey,
+		SummaryModel:     cfg.SummaryModel,
 	})
 	if err != nil {
 		app.Logger().Error("Failed to create bot", "error", err)

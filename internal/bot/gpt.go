@@ -6,14 +6,11 @@ import (
 
 	"github.com/biozz/biozz-dev-bot/internal/gpts"
 	"github.com/biozz/biozz-dev-bot/internal/librechat"
-	"github.com/pocketbase/pocketbase/core"
-	"gopkg.in/telebot.v4"
 	tele "gopkg.in/telebot.v4"
 )
 
 var (
 	gptModelsMenu                        = &tele.ReplyMarkup{}
-	openAIGPT41                          = gptModelsMenu.Data("OpenAI – GPT-4.1", "openAI/gpt-4.1")
 	libreChatProviders map[string]string = map[string]string{
 		"openAI": gpts.OpenAI,
 	}
@@ -21,29 +18,28 @@ var (
 
 func (b *Bot) newGPTChat(c tele.Context) error {
 
-	convo, err := b.librechatClient.MongoCreateConversation(
-		"67d54d915f5f1dfc7994e482",
-		"openAI",
-		"gpt-4.1",
-	)
+	convo, err := b.librechatClient.MongoCreateConversation(librechat.EndpointOpenAI)
 	if err != nil {
 		return err
 	}
 
-	user := c.Get("user").(*core.Record)
-	b.setUserData(user, map[string]any{"convo": convo})
-	msg := "Starting new conversation with OpenAI GPT-4.1, change it if necessary"
-	msg = EscapeTelegramMarkdown(msg)
-	return c.Send(msg, &tele.SendOptions{ParseMode: tele.ModeMarkdownV2}, &gptModelsMenu)
+	err = b.setState(map[string]any{"convo": convo, "chat_state": "gpt"})
+	if err != nil {
+		return err
+	}
+	msg := "Started new conversation"
+	return c.Send(msg, &tele.SendOptions{ReplyMarkup: gptModelsMenu})
 }
 
 func (b *Bot) handleGPTMessage(c tele.Context) error {
 	var (
-		txt  = c.Text()
-		user = c.Get("user").(*core.Record)
+		txt = c.Text()
 	)
 
-	convoID := user.Get("convo").(string)
+	convoID, err := b.getState("convo")
+	if err != nil {
+		return c.Send("Unable to get conversation from DB")
+	}
 
 	convo, err := b.librechatClient.MongoGetConversation(convoID)
 	if err != nil {
@@ -70,19 +66,26 @@ func (b *Bot) handleGPTMessage(c tele.Context) error {
 		return c.Send("Unable to create message in DB")
 	}
 
-	completionMessages := make([]gpts.ChatCompletionMessage, len(messages))
+	var completionMessages []gpts.ChatCompletionMessage
+
 	for i := range messages {
 		role := gpts.RoleAssistant
 		if messages[i].IsCreatedByUser {
 			role = gpts.RoleUser
 		}
-		completionMessages[i] = gpts.ChatCompletionMessage{
+		completionMessages = append(completionMessages, gpts.ChatCompletionMessage{
 			Role:    string(role),
 			Content: messages[i].Text,
-		}
+		})
 	}
 
-	c.Notify(telebot.Typing)
+	// Add current user message
+	completionMessages = append(completionMessages, gpts.ChatCompletionMessage{
+		Role:    string(gpts.RoleUser),
+		Content: txt,
+	})
+
+	c.Notify(tele.Typing)
 
 	// TODO: change to dynamic API key
 	provider := gpts.NewProvider(providerName, b.openAIAPIKey)
@@ -102,8 +105,44 @@ func (b *Bot) handleGPTMessage(c tele.Context) error {
 
 	b.librechatClient.MongoCreateMessage(convoID, result, lastUserMessageID, false)
 
+	// If this is the first response (only 2 messages: user question + GPT response)
+	// Generate a summary title using o3-mini
+	if len(messages) == 0 {
+		go b.summarizeConversation(convoID, txt, result)
+	}
+
 	c.Send(result)
 
 	return nil
 
+}
+
+func (b *Bot) summarizeConversation(convoID string, userMessage string, gptResponse string) {
+	provider := gpts.NewProvider(gpts.OpenAI, b.openAIAPIKey)
+
+	summaryPrompt := fmt.Sprintf(`Generate a concise title (max 4-5 words) for this conversation based on the user's question and assistant's response:
+
+User: %s
+Assistant: %s
+
+Title:`, userMessage, gptResponse)
+
+	resp, err := provider.CreateChatCompletion(
+		context.Background(),
+		gpts.ChatCompletionRequest{
+			Model: b.summaryModel,
+			Messages: []gpts.ChatCompletionMessage{
+				{
+					Role:    string(gpts.RoleUser),
+					Content: summaryPrompt,
+				},
+			},
+		},
+	)
+	if err != nil {
+		return // Fail silently, keep original title
+	}
+
+	title := resp.Message.Content
+	b.librechatClient.MongoUpdateConversationTitle(convoID, title)
 }
