@@ -68,7 +68,6 @@ func (b *Bot) Start() {
 	b.bot.Use(middleware.Whitelist(b.superuserID))
 
 	// Main commands
-	b.bot.Handle("/start", b.handleStart)
 	b.bot.Handle("/gpt", b.newGPTChat)
 
 	b.bot.Handle(tele.OnCallback, b.handleCallback)
@@ -99,8 +98,4 @@ func (b *Bot) handleText(c tele.Context) error {
 	}
 
 	return nil
-}
-
-func (b *Bot) handleStart(c tele.Context) error {
-	return c.Send("Bot started! Use /gpt to start a new GPT conversation.")
 }
