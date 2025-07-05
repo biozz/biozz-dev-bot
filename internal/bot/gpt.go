@@ -68,6 +68,12 @@ func (b *Bot) handleGPTMessage(c tele.Context) error {
 
 	var completionMessages []gpts.ChatCompletionMessage
 
+	// Add system prompt for concise responses
+	completionMessages = append(completionMessages, gpts.ChatCompletionMessage{
+		Role:    "system",
+		Content: "You are a helpful assistant. Keep your responses concise and to the point.",
+	})
+
 	for i := range messages {
 		role := gpts.RoleAssistant
 		if messages[i].IsCreatedByUser {
