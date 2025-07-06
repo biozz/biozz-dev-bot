@@ -14,26 +14,35 @@ The bot is intended to live in a Telegram Super Group with multiple topics. One 
 ## Setup
 
 1. **Environment Variables**:
-   ```bash
-   TELEGRAM_BOT_TOKEN=your_telegram_bot_token
-   SUPERUSER_ID=your_telegram_user_id
-   SUPERGROUP_ID=your_telegram_group_id
-   GPT_THREAD_ID=your_gpt_thread_id
-   LIBRECHAT_MONGO_URI=mongodb://localhost:27017/LibreChat
-   LIBRECHAT_USER_ID=your_librechat_user_id
-   LIBRECHAT_TAG=your_tag
-   OPENAI_API_KEY=your_openai_api_key
-   OPENROUTER_API_KEY=your_openrouter_api_key
-   CONVO_MODEL=gpt-4o
-   SUMMARY_MODEL=gpt-4
-   HOME_ASSISTANT_URL=http://your-home-assistant-url:8123
-   HOME_ASSISTANT_TOKEN=your_home_assistant_long_lived_token
-   ```
+
+```bash
+# Telegram Bot Configuration
+TELEGRAM_BOT_TOKEN=your-bot-token-here
+SUPERGROUP_ID=-1001234567890
+SUPERUSER_ID=123456789
+
+# GPT Configuration
+GPT_THREAD_ID=your-thread-id
+OPENAI_API_KEY=sk-proj-your-openai-api-key-here
+OPENROUTER_API_KEY=your-openrouter-api-key
+CONVO_MODEL=gpt-4o
+SUMMARY_MODEL=gpt-4o-mini
+
+# LibreChat Configuration
+LIBRECHAT_MONGO_URI=mongodb://localhost:27017/LibreChat
+LIBRECHAT_USER_ID=your-librechat-user-id
+LIBRECHAT_TAG=your-bot-tag
+
+# Home Assistant Configuration
+HOME_ASSISTANT_URL=http://your-home-assistant-url:8123
+HOME_ASSISTANT_TOKEN=your_home_assistant_long_lived_token
+```
 
 2. **Run**:
-   ```bash
-   go run main.go serve
-   ```
+
+```bash
+go run main.go serve
+```
 
 ## Commands
 
