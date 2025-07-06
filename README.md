@@ -6,13 +6,10 @@ The bot is intended to live in a Telegram Super Group with multiple topics. One 
 
 ## Features
 
-- **GPT Integration**: Chat with OpenAI GPT models via `/gpt` command
-- **LibreChat Integration**: Persistent conversation storage through MongoDB
-- **Access Control**: Whitelist-based user access (superuser only)
+- **AI Chat**: OpenAI/OpenRouter integration with persistent LibreChat storage
+- **Home Assistant**: Control smart home devices via interactive keyboards
+- **Access Control**: Whitelist-based user access
 - **PocketBase Backend**: Built-in database and API management
-- **Multiple AI Providers**: Support for OpenAI and OpenRouter APIs
-- **Conversation Management**: Create, store, and manage chat sessions
-- **State Management**: Context-aware message handling
 
 ## Setup
 
@@ -29,6 +26,8 @@ The bot is intended to live in a Telegram Super Group with multiple topics. One 
    OPENROUTER_API_KEY=your_openrouter_api_key
    CONVO_MODEL=gpt-4o
    SUMMARY_MODEL=gpt-4
+   HOME_ASSISTANT_URL=http://your-home-assistant-url:8123
+   HOME_ASSISTANT_TOKEN=your_home_assistant_long_lived_token
    ```
 
 2. **Run**:
@@ -39,3 +38,4 @@ The bot is intended to live in a Telegram Super Group with multiple topics. One 
 ## Commands
 
 - `/gpt` - Start a new GPT conversation
+- `/ha` - Show Home Assistant devices with interactive control panel
